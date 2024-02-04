@@ -45,3 +45,26 @@ class Database:
             result = cursor.execute("SELECT `nickname` FROM `users` WHERE `user_id` = ?", (user_id,)).fetchall()
             nickname = str(result[0][0]) if result else ""
             return nickname
+        
+    def set_time_sub(self, user_id, time_sub):
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.execute("UPDATE `users` SET `time_sub` = ? WHERE `user_id` = ?", (time_sub, user_id,))
+            self.conn.commit()        
+
+    def get_time_sub(self, user_id):
+        with self.lock:
+            cursor = self.conn.cursor()
+            result = cursor.execute("SELECT `time_sub` FROM `users` WHERE `user_id` = ?", (user_id,)).fetchall()
+            time_sub = int(result[0][0]) if result else ""
+            return time_sub        
+        
+    def get_sub_status(self, user_id):
+        with self.lock:
+            cursor = self.conn.cursor()
+            result = cursor.execute("SELECT `time_sub` FROM `users` WHERE `user_id` = ?", (user_id,)).fetchall()
+            time_sub = int(result[0][0]) if result else ""
+            if time_sub > int(time.time()):
+                return True
+            else:
+                return False   
