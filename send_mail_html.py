@@ -8,16 +8,16 @@ from email.mime.application import MIMEApplication
 from email.mime.base import MIMEBase
 
 
-email_sender = 'saykomm1@gmail.com'
-email_password = 'yfmlzbgpupwslglz'
-email_receiver = 'loops4sm@gmail.com'
+email_sender = 'Your mail'
+email_password = 'Your pass'
+email_receiver = 'Mail Receiver'
 
 def send_email(message, sender, receiver,  password):
   server = smtplib.SMTP("smtp.gmail.com", 587)
-  server.starttls()  # Используйте TLS для защищенного подключения
+  server.starttls() 
 
 
-  try:                        #Template reading
+  try:                      
     with open('index.html', 'r') as file:
       template = file.read()
   except IOError:
@@ -26,7 +26,7 @@ def send_email(message, sender, receiver,  password):
 
   try:                   # Mail sending
     server.login(sender, password)
-    # msg = MIMEText(template, 'html')
+    
     msg = MIMEMultipart()
     msg['From'] = sender
     msg['To'] = email_receiver
