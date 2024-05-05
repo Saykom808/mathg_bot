@@ -11,5 +11,5 @@ mainMenu.add(profile_button, subscribe_button)
 #--- SubInlineMenu ---
 
 sub_inline_markup = types.InlineKeyboardMarkup(row_width=1)
-subscribe_month_2 = types.InlineKeyboardButton(text = "Месяц - 1 рубль", callback_data="submonth")
+# subscribe_month_2 = types.InlineKeyboardButton(text = "Месяц - 1 рубль", callback_data="submonth")
 sub_inline_markup.add(subscribe_month_2)
