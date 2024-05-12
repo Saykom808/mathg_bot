@@ -4,7 +4,7 @@ from telebot import types
 import markups as nav
 from db import Database
 
-token = '6618732731:AAHDw39S5cH3Of0IdaZ3sfXGfvoMipGVUf4'
+# token = '6618732731:AAHDw39S5cH3Of0IdaZ3sfXGfvoMipGVUf4'
 # youtoken = '381764678:TEST:76437'
 
 # Настройка логирования
