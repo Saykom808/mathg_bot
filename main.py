@@ -2,9 +2,9 @@ import logging
 import telebot
 from telebot import types
 import markups as nav
-from db import Database
+from calc import integrate_function, definite_integral
 
-# token = '6618732731:AAHDw39S5cH3Of0IdaZ3sfXGfvoMipGVUf4'
+token = '6618732731:AAHDw39S5cH3Of0IdaZ3sfXGfvoMipGVUf4'
 # youtoken = '381764678:TEST:76437'
 
 # Настройка логирования
@@ -13,63 +13,84 @@ logging.basicConfig(level=logging.INFO)
 # Создаем экземпляр бота
 bot = telebot.TeleBot(token)
 
-# Инициализируем базу данных
-db = Database('database.db')
-
-def days_to_seconds(days):
-   return days * 24 * 60 * 60
-
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def start(message: telebot.types.Message):
-    if not db.user_exists(message.from_user.id):
-        db.add_user(message.from_user.id)
-        bot.send_message(message.from_user.id, 'Привет! Укажите ваш ник')
-    else:
-        bot.send_message(message.from_user.id, "Вы уже зарегистрированы!", reply_markup=nav.mainMenu)
+    bot.send_message(message.from_user.id, 'Привет! Я бот-калькулятор интегралов. Введите команду /help для получения списка команд.', reply_markup=nav.mainMenu)
 
-# Обработчик текстовых сообщений
-@bot.message_handler(func=lambda message: True)
-def bot_message(message: telebot.types.Message):
-    if message.chat.type == 'private':
-        if message.text == "PROFILE":
-            if db.user_exists(message.from_user.id):
-                user_nickname = 'Ваш ник: ' + db.get_nickname(message.from_user.id)
-                bot.send_message(message.from_user.id, user_nickname)
-            else:
-                bot.send_message(message.from_user.id, "Вы еще не зарегистрированы.")
-        elif message.text == "SUBSCRIBE":
-            bot.send_message(message.chat.id, "Чтобы оформить подписку, нажмите кнопку оплаты:", reply_markup=nav.sub_inline_markup)
-        else:
-            if db.get_signup(message.from_user.id) == "setnickname":
-                if len(message.text) > 15:
-                    bot.send_message(message.from_user.id, "Никнейм не должен превышать 15 символов!")
-                elif '@' in message.text or '/' in message.text:
-                    bot.send_message(message.from_user.id, "Никнейм содержит запрещенные символы")
-                else:
-                    db.set_nickname(message.from_user.id, message.text)
-                    db.set_signup(message.from_user.id, "Done")
-                    bot.send_message(message.from_user.id, "Регистрация прошла успешно!", reply_markup=nav.mainMenu)
-            else:
-                bot.send_message(message.from_user.id, "Перепроверьте запрос")
+# Обработчик команды /help
+@bot.message_handler(commands=['help'])
+def help(message: telebot.types.Message):
+    help_text = (
+        "Команды:\n"
+        "/integrate - Вычисление неопределенного интеграла\n"
+        "/definite_integral - Вычисление определенного интеграла\n"
+    )
+    bot.send_message(message.from_user.id, help_text, reply_markup=nav.mainMenu)
 
-# Обработчик callback-запросов для подписки
-@bot.callback_query_handler(func=lambda call: call.data == "month_sub")
-def process_subscription(call):
-    bot.delete_message(call.from_user.id, call.message.message_id)
-    bot.send_message(call.from_user.id, "Оформлена подписка")
+# Обработчик команды /integrate
+@bot.message_handler(commands=['integrate'])
+def integrate(message: telebot.types.Message):
+    msg = bot.send_message(message.from_user.id, "Введите выражение для интегрирования (например, x**2):")
+    bot.register_next_step_handler(msg, get_expression)
 
-# Обработчик предварительных запросов на оплату
-@bot.pre_checkout_query_handler(func=lambda query: True)
-def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
-    bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+def get_expression(message: telebot.types.Message):
+    expression = message.text
+    msg = bot.send_message(message.from_user.id, "Введите переменную интегрирования (например, x):")
+    bot.register_next_step_handler(msg, get_variable, expression)
 
-# Обработчик успешной оплаты
-@bot.message_handler(content_types=["successful_payment"])
-def process_pay(message: types.Message):
-    if message.successful_payment.invoice_payload == "month_sub":
-        # Подписка пользователю
-        bot.send_message(message.from_user.id, "Вам выдана подписка на месяц")
+def get_variable(message: telebot.types.Message, expression):
+    variable = message.text
+    try:
+        result = integrate_function(expression, variable)
+        bot.send_message(message.from_user.id, f"Неопределенный интеграл {expression} по {variable}: {result}", reply_markup=nav.mainMenu)
+    except Exception as e:
+        bot.send_message(message.from_user.id, f"Ошибка: {e}", reply_markup=nav.mainMenu)
+
+# Обработчик команды /definite_integral
+@bot.message_handler(commands=['definite_integral'])
+def definite_integral_command(message: telebot.types.Message):
+    msg = bot.send_message(message.from_user.id, "Введите выражение для интегрирования (например, x**2):")
+    bot.register_next_step_handler(msg, get_definite_expression)
+
+def get_definite_expression(message: telebot.types.Message):
+    expression = message.text
+    msg = bot.send_message(message.from_user.id, "Введите переменную интегрирования (например, x):")
+    bot.register_next_step_handler(msg, get_definite_variable, expression)
+
+def get_definite_variable(message: telebot.types.Message, expression):
+    variable = message.text
+    msg = bot.send_message(message.from_user.id, "Введите нижний предел интегрирования:")
+    bot.register_next_step_handler(msg, get_lower_limit, expression, variable)
+
+def get_lower_limit(message: telebot.types.Message, expression, variable):
+    try:
+        lower_limit = float(message.text)
+        msg = bot.send_message(message.from_user.id, "Введите верхний предел интегрирования:")
+        bot.register_next_step_handler(msg, get_upper_limit, expression, variable, lower_limit)
+    except ValueError:
+        bot.send_message(message.from_user.id, "Неверный формат. Пожалуйста, введите число.", reply_markup=nav.mainMenu)
+
+def get_upper_limit(message: telebot.types.Message, expression, variable, lower_limit):
+    try:
+        upper_limit = float(message.text)
+        try:
+            result = definite_integral(expression, variable, lower_limit, upper_limit)
+            bot.send_message(message.from_user.id, f"Определенный интеграл {expression} по {variable} от {lower_limit} до {upper_limit}: {result}", reply_markup=nav.mainMenu)
+        except Exception as e:
+            bot.send_message(message.from_user.id, f"Ошибка: {e}", reply_markup=nav.mainMenu)
+    except ValueError:
+        bot.send_message(message.from_user.id, "Неверный формат. Пожалуйста, введите число.", reply_markup=nav.mainMenu)
+
+# Обработчик текстовых сообщений для кнопок
+@bot.message_handler(func=lambda message: message.text in ['HELP', 'INTEGRATE', 'DEFINITE INTEGRAL'])
+def handle_buttons(message: telebot.types.Message):
+    if message.text == 'HELP':
+        help(message)
+    elif message.text == 'INTEGRATE':
+        integrate(message)
+    elif message.text == 'DEFINITE INTEGRAL':
+        definite_integral_command(message)
 
 # Запускаем бот
 if __name__ == "__main__":
