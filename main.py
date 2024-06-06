@@ -17,7 +17,7 @@ bot = telebot.TeleBot(token)
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def start(message: telebot.types.Message):
-    bot.send_message(message.from_user.id, 'Привет! Я бот-калькулятор интегралов и производных. Введите команду /help для получения списка команд.', reply_markup=nav.mainMenu)
+    bot.send_message(message.from_user.id, 'Привет! Я бот-калькулятор производных. Введите команду /help для получения списка команд.', reply_markup=nav.mainMenu)
 
 # Обработчик команды /help
 @bot.message_handler(commands=['help'])
