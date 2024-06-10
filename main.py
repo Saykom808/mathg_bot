@@ -8,18 +8,18 @@ import re
 token = '6618732731:AAHDw39S5cH3Of0IdaZ3sfXGfvoMipGVUf4'
 # youtoken = '381764678:TEST:76437'
 
-# Настройка логирования
+
 logging.basicConfig(level=logging.INFO)
 
-# Создаем экземпляр бота
+
 bot = telebot.TeleBot(token)
 
-# Обработчик команды /start
+
 @bot.message_handler(commands=['start'])
 def start(message: telebot.types.Message):
     bot.send_message(message.from_user.id, 'Привет! Я бот-калькулятор интегралов и производных. Введите команду /help для получения списка команд.', reply_markup=nav.mainMenu)
 
-# Обработчик команды /help
+
 @bot.message_handler(commands=['help'])
 def help(message: telebot.types.Message):
     help_text = (
@@ -40,12 +40,12 @@ def help(message: telebot.types.Message):
     )
     bot.send_message(message.from_user.id, help_text, reply_markup=nav.mainMenu)
 
-# Валидация выражения
+
 def validate_expression(expression):
     pattern = r'^[0-9a-zA-Z+\-*/^() sqrt exp log sin cos tan]*$'
     return re.match(pattern, expression) is not None
 
-# Обработчик команды /integrate
+
 @bot.message_handler(commands=['integrate'])
 def integrate(message: telebot.types.Message):
     msg = bot.send_message(message.from_user.id, "Введите выражение для интегрирования (например, x**2):")
@@ -70,7 +70,7 @@ def get_variable(message: telebot.types.Message, expression):
     else:
         bot.send_message(message.from_user.id, "Некорректная переменная. Попробуйте снова.", reply_markup=nav.mainMenu)
 
-# Обработчик команды /definite_integral
+
 @bot.message_handler(commands=['definite_integral'])
 def definite_integral_command(message: telebot.types.Message):
     msg = bot.send_message(message.from_user.id, "Введите выражение для интегрирования (например, x**2):")
@@ -111,7 +111,7 @@ def get_upper_limit(message: telebot.types.Message, expression, variable, lower_
     except ValueError:
         bot.send_message(message.from_user.id, "Неверный формат. Пожалуйста, введите число.", reply_markup=nav.mainMenu)
 
-# Обработчик команды /differentiate
+
 @bot.message_handler(commands=['differentiate'])
 def differentiate(message: telebot.types.Message):
     msg = bot.send_message(message.from_user.id, "Введите выражение для дифференцирования (например, x**2):")
@@ -136,7 +136,7 @@ def get_diff_variable(message: telebot.types.Message, expression):
     else:
         bot.send_message(message.from_user.id, "Некорректная переменная. Попробуйте снова.", reply_markup=nav.mainMenu)
 
-# Обработчик текстовых сообщений для кнопок
+
 @bot.message_handler(func=lambda message: message.text in ['HELP', 'INTEGRATE', 'DEFINITE INTEGRAL', 'DIFFERENTIATE'])
 def handle_buttons(message: telebot.types.Message):
     if message.text == 'HELP':
@@ -148,6 +148,6 @@ def handle_buttons(message: telebot.types.Message):
     elif message.text == 'DIFFERENTIATE':
         differentiate(message)
 
-# Запускаем бот
+
 if __name__ == "__main__":
     bot.polling()
