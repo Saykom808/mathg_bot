@@ -18,7 +18,7 @@ derivatives_table = {
     'x**n': 'n*x**(n-1)',
     'a**x': 'a**x * log(a)',
     'e**x': 'e**x',
-    'log(a, x)': '1 / (x * log(a))',
+    'log(a, x)': '1 / (x * ln(a))',
     'ln(x)': '1 / x',
     'sin(x)': 'cos(x)',
     'cos(x)': '-sin(x)',
