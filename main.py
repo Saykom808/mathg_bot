@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 
 bot = telebot.TeleBot(token)
 
-# Расширенная таблица производных из предоставленного изображения
+
 derivatives_table = {
     'c': '0',
     'x**n': 'n*x**(n-1)',
@@ -29,7 +29,7 @@ derivatives_table = {
     'u + v': 'u\' + v\'',
     'u * v': 'u\' * v + u * v\'',
     'u / v': '(u\' * v - u * v\') / v**2'
-    # Добавьте еще, если нужно
+
 }
 
 current_game = {}
