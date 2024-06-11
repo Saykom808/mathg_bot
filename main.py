@@ -2,23 +2,41 @@ import logging
 import telebot
 from telebot import types
 import markups as nav
-from calc import integrate_function, definite_integral, differentiate_function
+from calc import differentiate_function
 import re
+import random
 
-token = '6618732731:AAHDw39S5cH3Of0IdaZ3sfXGfvoMipGVUf4'
-# youtoken = '381764678:TEST:76437'
-
+token = '7088961331:AAF1OdiZbup-63WanqRvlgh1s05uL9r6PgQ'
 
 logging.basicConfig(level=logging.INFO)
 
-
 bot = telebot.TeleBot(token)
 
+# Расширенная таблица производных из предоставленного изображения
+derivatives_table = {
+    'c': '0',
+    'x**n': 'n*x**(n-1)',
+    'a**x': 'a**x * log(a)',
+    'e**x': 'e**x',
+    'log(a, x)': '1 / (x * log(a))',
+    'ln(x)': '1 / x',
+    'sin(x)': 'cos(x)',
+    'cos(x)': '-sin(x)',
+    'sqrt(x)': '1 / (2 * sqrt(x))',
+    'tg(x)': '1 / cos(x)**2',
+    'ctg(x)': '-1 / sin(x)**2',
+    'c*u': 'c*u\'',
+    'u + v': 'u\' + v\'',
+    'u * v': 'u\' * v + u * v\'',
+    'u / v': '(u\' * v - u * v\') / v**2'
+    # Добавьте еще, если нужно
+}
+
+current_game = {}
 
 @bot.message_handler(commands=['start'])
 def start(message: telebot.types.Message):
     bot.send_message(message.from_user.id, 'Привет! Я бот-калькулятор интегралов и производных. Введите команду /help для получения списка команд.', reply_markup=nav.mainMenu)
-
 
 @bot.message_handler(commands=['help'])
 def help(message: telebot.types.Message):
@@ -40,114 +58,84 @@ def help(message: telebot.types.Message):
     )
     bot.send_message(message.from_user.id, help_text, reply_markup=nav.mainMenu)
 
-
 def validate_expression(expression):
     pattern = r'^[0-9a-zA-Z+\-*/^() sqrt exp log sin cos tan]*$'
     return re.match(pattern, expression) is not None
 
-
-@bot.message_handler(commands=['integrate'])
-def integrate(message: telebot.types.Message):
-    msg = bot.send_message(message.from_user.id, "Введите выражение для интегрирования (например, x**2):")
-    bot.register_next_step_handler(msg, get_expression)
-
-def get_expression(message: telebot.types.Message):
-    expression = message.text
-    if validate_expression(expression):
-        msg = bot.send_message(message.from_user.id, "Введите переменную интегрирования (например, x):")
-        bot.register_next_step_handler(msg, get_variable, expression)
-    else:
-        bot.send_message(message.from_user.id, "Некорректное выражение. Попробуйте снова.", reply_markup=nav.mainMenu)
-
-def get_variable(message: telebot.types.Message, expression):
-    variable = message.text
-    if variable.isalpha():
-        try:
-            result = integrate_function(expression, variable)
-            bot.send_message(message.from_user.id, f"Неопределенный интеграл {expression} по {variable}: {result}", reply_markup=nav.mainMenu)
-        except Exception as e:
-            bot.send_message(message.from_user.id, f"Ошибка: {e}", reply_markup=nav.mainMenu)
-    else:
-        bot.send_message(message.from_user.id, "Некорректная переменная. Попробуйте снова.", reply_markup=nav.mainMenu)
-
-
-@bot.message_handler(commands=['definite_integral'])
-def definite_integral_command(message: telebot.types.Message):
-    msg = bot.send_message(message.from_user.id, "Введите выражение для интегрирования (например, x**2):")
-    bot.register_next_step_handler(msg, get_definite_expression)
-
-def get_definite_expression(message: telebot.types.Message):
-    expression = message.text
-    if validate_expression(expression):
-        msg = bot.send_message(message.from_user.id, "Введите переменную интегрирования (например, x):")
-        bot.register_next_step_handler(msg, get_definite_variable, expression)
-    else:
-        bot.send_message(message.from_user.id, "Некорректное выражение. Попробуйте снова.", reply_markup=nav.mainMenu)
-
-def get_definite_variable(message: telebot.types.Message, expression):
-    variable = message.text
-    if variable.isalpha():
-        msg = bot.send_message(message.from_user.id, "Введите нижний предел интегрирования:")
-        bot.register_next_step_handler(msg, get_lower_limit, expression, variable)
-    else:
-        bot.send_message(message.from_user.id, "Некорректная переменная. Попробуйте снова.", reply_markup=nav.mainMenu)
-
-def get_lower_limit(message: telebot.types.Message, expression, variable):
-    try:
-        lower_limit = float(message.text)
-        msg = bot.send_message(message.from_user.id, "Введите верхний предел интегрирования:")
-        bot.register_next_step_handler(msg, get_upper_limit, expression, variable, lower_limit)
-    except ValueError:
-        bot.send_message(message.from_user.id, "Неверный формат. Пожалуйста, введите число.", reply_markup=nav.mainMenu)
-
-def get_upper_limit(message: telebot.types.Message, expression, variable, lower_limit):
-    try:
-        upper_limit = float(message.text)
-        try:
-            result = definite_integral(expression, variable, lower_limit, upper_limit)
-            bot.send_message(message.from_user.id, f"Определенный интеграл {expression} по {variable} от {lower_limit} до {upper_limit}: {result}", reply_markup=nav.mainMenu)
-        except Exception as e:
-            bot.send_message(message.from_user.id, f"Ошибка: {e}", reply_markup=nav.mainMenu)
-    except ValueError:
-        bot.send_message(message.from_user.id, "Неверный формат. Пожалуйста, введите число.", reply_markup=nav.mainMenu)
-
-
 @bot.message_handler(commands=['differentiate'])
 def differentiate(message: telebot.types.Message):
-    msg = bot.send_message(message.from_user.id, "Введите выражение для дифференцирования (например, x**2):")
+    msg = bot.send_message(message.from_user.id, "Введите выражение для дифференцирования (например, x**2):", reply_markup=nav.stopMenu)
     bot.register_next_step_handler(msg, get_diff_expression)
 
 def get_diff_expression(message: telebot.types.Message):
+    if message.text.lower() == 'стоп':
+        bot.send_message(message.from_user.id, "Возвращаемся в главное меню.", reply_markup=nav.mainMenu)
+        return
+
     expression = message.text
     if validate_expression(expression):
-        msg = bot.send_message(message.from_user.id, "Введите переменную дифференцирования (например, x):")
+        msg = bot.send_message(message.from_user.id, "Введите переменную дифференцирования (например, x):", reply_markup=nav.stopMenu)
         bot.register_next_step_handler(msg, get_diff_variable, expression)
     else:
-        bot.send_message(message.from_user.id, "Некорректное выражение. Попробуйте снова.", reply_markup=nav.mainMenu)
+        bot.send_message(message.from_user.id, "Некорректное выражение. Попробуйте снова.", reply_markup=nav.stopMenu)
+        differentiate(message)
 
 def get_diff_variable(message: telebot.types.Message, expression):
+    if message.text.lower() == 'стоп':
+        bot.send_message(message.from_user.id, "Возвращаемся в главное меню.", reply_markup=nav.mainMenu)
+        return
+
     variable = message.text
     if variable.isalpha():
         try:
             result = differentiate_function(expression, variable)
             bot.send_message(message.from_user.id, f"Производная {expression} по {variable}: {result}", reply_markup=nav.mainMenu)
         except Exception as e:
-            bot.send_message(message.from_user.id, f"Ошибка: Некорректный ввод", reply_markup=nav.mainMenu)
+            bot.send_message(message.from_user.id, f"Ошибка: Некорректный ввод", reply_markup=nav.stopMenu)
+            differentiate(message)
     else:
-        bot.send_message(message.from_user.id, "Некорректная переменная. Попробуйте снова.", reply_markup=nav.mainMenu)
-
-
-@bot.message_handler(func=lambda message: message.text in ['HELP', 'INTEGRATE', 'DEFINITE INTEGRAL', 'DIFFERENTIATE'])
-def handle_buttons(message: telebot.types.Message):
-    if message.text == 'HELP':
-        help(message)
-    elif message.text == 'INTEGRATE':
-        integrate(message)
-    elif message.text == 'DEFINITE INTEGRAL':
-        definite_integral_command(message)
-    elif message.text == 'DIFFERENTIATE':
+        bot.send_message(message.from_user.id, "Некорректная переменная. Попробуйте снова.", reply_markup=nav.stopMenu)
         differentiate(message)
 
+@bot.message_handler(func=lambda message: message.text == 'Правила ввода')
+def handle_help_button(message: telebot.types.Message):
+    help(message)
+
+@bot.message_handler(func=lambda message: message.text == 'Ввести производную')
+def handle_differentiate_button(message: telebot.types.Message):
+    differentiate(message)
+
+@bot.message_handler(func=lambda message: message.text == 'Игра обучение')
+def start_game(message: telebot.types.Message):
+    user_id = message.from_user.id
+    if user_id not in current_game:
+        current_game[user_id] = {'score': 0, 'current_question': None}
+    send_random_derivative(message)
+
+def send_random_derivative(message):
+    user_id = message.from_user.id
+    question = random.choice(list(derivatives_table.keys()))
+    current_game[user_id]['current_question'] = question
+    bot.send_message(user_id, f"Найдите производную: {question}", reply_markup=nav.stopMenu)
+    msg = bot.send_message(user_id, "Введите ответ или напишите 'стоп' для завершения игры:")
+    bot.register_next_step_handler(msg, check_answer)
+
+def check_answer(message: telebot.types.Message):
+    user_id = message.from_user.id
+    if message.text.lower() == 'стоп':
+        bot.send_message(user_id, f"Игра окончена. Ваш счет: {current_game[user_id]['score']}", reply_markup=nav.mainMenu)
+        del current_game[user_id]
+        return
+
+    answer = message.text
+    question = current_game[user_id]['current_question']
+    correct_answer = derivatives_table[question]
+    if answer == correct_answer:
+        current_game[user_id]['score'] += 1
+        bot.send_message(user_id, "Правильно!")
+    else:
+        bot.send_message(user_id, f"Неправильно. Правильный ответ: {correct_answer}")
+    send_random_derivative(message)
 
 if __name__ == "__main__":
     bot.polling()
