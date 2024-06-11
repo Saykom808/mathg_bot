@@ -6,8 +6,8 @@ from calc import differentiate_function
 import re
 import random
 
-token = '7088961331:AAF1OdiZbup-63WanqRvlgh1s05uL9r6PgQ'
-
+# token = '7088961331:AAF1OdiZbup-63WanqRvlgh1s05uL9r6PgQ'
+token = 'TOKEN'
 logging.basicConfig(level=logging.INFO)
 
 bot = telebot.TeleBot(token)
